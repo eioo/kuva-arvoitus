@@ -1,0 +1,25 @@
+{
+  "name": "kuva-arvoitus",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "build:client": "parcel build src/client/index.pug",
+    "dev:client": "parcel src/client/index.pug",
+    "dev:server": "ts-node-dev --transpileOnly --respawn src/server/index.ts",
+    "dev": "npm-run-all -p dev:*",
+    "start": "npm run dev"
+  },
+  "dependencies": {
+    "@types/dotenv": "^6.1.0",
+    "@types/ws": "^6.0.1",
+    "dotenv": "^7.0.0",
+    "npm-run-all": "^4.1.5",
+    "parcel-bundler": "^1.12.1",
+    "pug": "^2.0.3",
+    "ts-node-dev": "^1.0.0-pre.32",
+    "tslint-config-prettier": "^1.17.0",
+    "typescript": "^3.2.2",
+    "ws": "^6.2.0"
+  }
+}

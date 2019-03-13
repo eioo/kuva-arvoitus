@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    meta(http-equiv="X-UA-Compatible", content="ie=edge")
+    title Kuva-arvoitus
+    link(rel="stylesheet", href="style.css")
+  body
+    canvas#game
+    p
+      | Brush width: 
+      input(type="range", id="stroke-width", min=1, max=30, value=3, step=1)
+
+    p
+      | Brush color:
+      button.stroke-color(data-color="white") ereisör
+      button.stroke-color(data-color="black") bläk
+      button.stroke-color(data-color="red") red
+      button.stroke-color(data-color="green") gren
+      button.stroke-color(data-color="blue") blue
+      button.stroke-color(data-color="yellow") yelou
+
+    p
+      button#clear-canvas Clear canvas
+
+  script(src='index.ts')
