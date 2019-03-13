@@ -17,6 +17,8 @@ class SocketServer {
     this.wss.on('connection', ws => {
       console.log(`Socket connected (${this.wss.clients.size})`);
 
+      this.sendToAll(SocketEvent.roomUserCount, this.wss.clients.size);
+
       ws.on('message', (data: string) => {
         const json = JSON.parse(data);
         const [event, ...values] = json;
@@ -36,24 +38,41 @@ class SocketServer {
         }
 
         if (event === SocketEvent.clearCanvas) {
-          return this.broadcast(ws, SocketEvent.clearCanvas);
+          return this.broadcast(
+            ws,
+            SocketEvent.roomUserCount,
+            this.wss.clients.size
+          );
         }
       });
 
       ws.on('close', () => {
         console.log(`Socket disconnected (${this.wss.clients.size})`);
+        this.sendToAll(SocketEvent.roomUserCount, this.wss.clients.size);
       });
     });
 
     console.log('WebSocket server running on port ' + config.webSocket.port);
   }
 
-  public emit(ws: WebSocket, event: SocketEvent, data: any[]) {
+  public emit(ws: WebSocket, event: SocketEvent, data?: any) {
+    data = data ? data : [];
     const json = JSON.stringify([event, ...data]);
     ws.send(json);
   }
 
-  private broadcast(self: WebSocket, event: SocketEvent, data?: any[]) {
+  public sendToAll(event: SocketEvent, data?: any) {
+    data = data ? data : [];
+    const json = JSON.stringify([event, ...data]);
+
+    this.wss.clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(json);
+      }
+    });
+  }
+
+  private broadcast(self: WebSocket, event: SocketEvent, data?: any) {
     data = data ? data : [];
     const json = JSON.stringify([event, ...data]);
 

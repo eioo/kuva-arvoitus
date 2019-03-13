@@ -45,6 +45,12 @@ class SocketClient {
     if (event === SocketEvent.clearCanvas) {
       return this.game.clearCanvas();
     }
+
+    if (event === SocketEvent.roomUserCount) {
+      const [count] = values;
+      console.log(values, count);
+      this.game.setRoomUserCount(count);
+    }
   };
 
   private onOpen() {

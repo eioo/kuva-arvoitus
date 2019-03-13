@@ -47,6 +47,11 @@ class Game {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
+  public setRoomUserCount(count: number) {
+    const roomUserCountEl = $('#room-user-count') as HTMLSpanElement;
+    roomUserCountEl.textContent = count.toString();
+  }
+
   private init() {
     this.socketClient = new SocketClient(this);
     this.canvas = document.querySelector('canvas#game') as HTMLCanvasElement;
