@@ -3,6 +3,7 @@ import * as WebSocket from 'ws';
 import { config } from '../env';
 import { SocketEvent } from '../socketEvents';
 import { IGameRooms, IWebSocketExtended } from '../types';
+import { logger } from './logger';
 
 class SocketServer {
   public wss: WebSocket.Server;
@@ -21,7 +22,7 @@ class SocketServer {
       ws.id = uuid.v4();
 
       this.sendToAll(SocketEvent.roomUserCount, this.wss.clients.size);
-      console.log(`Socket connected\t(${this.wss.clients.size})\t${ws.id}`);
+      logger.log(`Socket connected\t(${this.wss.clients.size})\t${ws.id}`);
 
       ws.on('message', (data: string) => {
         const json = JSON.parse(data);
@@ -42,6 +43,10 @@ class SocketServer {
           }
 
           for (const drawPath of this.rooms[roomName].drawPaths) {
+            if (!drawPath.points.length) {
+              return;
+            }
+
             const [firstX, firstY] = drawPath.points[0];
 
             this.emit(ws, SocketEvent.beginPath, [
@@ -60,6 +65,7 @@ class SocketServer {
 
         if (event === SocketEvent.beginPath) {
           const [x, y, strokeWidth, strokeColor] = values;
+
           this.broadcast(ws, SocketEvent.beginPath, [
             x,
             y,
@@ -68,23 +74,27 @@ class SocketServer {
           ]);
 
           ws.drawPath = {
-            points: [],
-            strokeColor,
+            points: [[x, y]],
             strokeWidth,
+            strokeColor,
           };
 
           return;
         }
 
         if (event === SocketEvent.endPath) {
-          this.rooms[ws.room].drawPaths.push({
-            points: ws.drawPath.points,
-            strokeColor: ws.drawPath.strokeColor,
-            strokeWidth: ws.drawPath.strokeWidth,
-          });
+          if (!ws.drawPath || !ws.drawPath.points || !this.rooms[ws.room]) {
+            return;
+          }
+
+          this.rooms[ws.room].drawPaths.push(ws.drawPath);
         }
 
         if (event === SocketEvent.drawPath) {
+          if (!ws.drawPath) {
+            return;
+          }
+
           ws.drawPath.points.push(values[0]);
           return this.broadcast(ws, SocketEvent.drawPath, values);
         }
@@ -98,6 +108,10 @@ class SocketServer {
       ws.on('close', () => {
         this.sendToAll(SocketEvent.roomUserCount, this.wss.clients.size);
 
+        if (ws.drawPath && ws.drawPath.points.length) {
+          this.rooms[ws.room].drawPaths.push(ws.drawPath);
+        }
+
         for (const [roomName, room] of Object.entries(this.rooms)) {
           this.rooms[roomName].clients = room.clients.filter(
             client => client.id !== ws.id
@@ -108,19 +122,20 @@ class SocketServer {
           }
         }
 
-        console.log(
-          `Socket disconnected\t(${this.wss.clients.size})\t${ws.id}`
-        );
+        logger.log(`Socket disconnected\t(${this.wss.clients.size})\t${ws.id}`);
       });
     });
 
-    console.log('WebSocket server running on port ' + config.webSocket.port);
+    logger.log('WebSocket server running on port ' + config.webSocket.port);
   }
 
   public emit(ws: WebSocket, event: SocketEvent, data?: any) {
     data = data ? data : [];
     const json = JSON.stringify([event, ...data]);
-    ws.send(json);
+
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(json);
+    }
   }
 
   public sendToAll(event: SocketEvent, data?: any) {

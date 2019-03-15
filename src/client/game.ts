@@ -1,6 +1,11 @@
 import { SocketEvent } from '../socketEvents';
 import SocketClient from './socketClient';
-import { getMousePos, getRoomNameFromUrl } from './utils';
+import {
+  capitalize,
+  clickedInside,
+  getMousePos,
+  getRoomNameFromUrl,
+} from './utils';
 
 const $ = (selector: string) => document.querySelector(selector);
 const $all = (selector: string) =>
@@ -12,6 +17,7 @@ class Game {
   private ctx: CanvasRenderingContext2D;
 
   private mouseDown = false;
+  private prevMousePos: number[] = [];
   private dragPath: number[][] = [];
   private dragChunkSize = 1; // Max number of draw events to send at once
   private brush = {
@@ -60,25 +66,33 @@ class Game {
 
     this.canvas.width = 800;
     this.canvas.height = 600;
-    this.canvas.addEventListener('mousedown', this.handleMouseDown);
-    this.canvas.addEventListener('mousemove', this.handleMouseMove);
-    this.canvas.addEventListener('mouseup', this.handleMouseUp);
+    document.body.addEventListener('mousedown', this.handleMouseDown);
+    document.body.addEventListener('mouseup', this.handleMouseUp);
+    this.canvas.addEventListener('mousemove', this.handleCanvasMouseMove);
     this.canvas.addEventListener('mouseleave', this.handleMouseLeave);
+    this.canvas.addEventListener('mouseenter', this.handleMouseEnter);
 
     const roomName = getRoomNameFromUrl();
 
     if (roomName) {
+      const roomNameEl = $('#room-name') as HTMLSpanElement;
       const gameContainerEl = $('.game-container') as HTMLDivElement;
       gameContainerEl.style.display = 'grid';
+      roomNameEl.textContent = capitalize(roomName);
     } else {
+      if (window.location.pathname !== '/') {
+        window.location.href = '/';
+        return;
+      }
+
       const joinContainerEl = $('.join-container') as HTMLDivElement;
-      joinContainerEl.style.display = 'block';
+      joinContainerEl.style.display = 'grid';
     }
 
-    this.buttonEventListeners();
+    this.prepareElements();
   }
 
-  private buttonEventListeners = () => {
+  private prepareElements = () => {
     // Join room
     const joinRoomInput = $('input#join-room-name') as HTMLInputElement;
     const joinRoomButton = $('button#join-room') as HTMLButtonElement;
@@ -88,6 +102,12 @@ class Game {
     const currentColorEl = $('.current-color') as HTMLDivElement;
     const strokeColorElAll = $all('.palette .color') as HTMLDivElement[];
     const clearButton = $('button#clear-canvas') as HTMLButtonElement;
+
+    joinRoomInput.addEventListener('keydown', ev => {
+      if (ev.key === 'Enter') {
+        this.joinRoom(joinRoomInput.value);
+      }
+    });
 
     joinRoomButton.addEventListener('click', () => {
       this.joinRoom(joinRoomInput.value);
@@ -119,6 +139,10 @@ class Game {
   }
 
   private handleMouseDown = (ev: MouseEvent) => {
+    if (!clickedInside(this.canvas, ev)) {
+      return;
+    }
+
     const [mouseX, mouseY] = getMousePos(this.canvas, ev);
     const { strokeWidth, strokeColor } = this.brush;
     this.mouseDown = true;
@@ -133,42 +157,72 @@ class Game {
     this.beginPath(mouseX, mouseY, strokeWidth, strokeColor);
   };
 
-  private handleMouseMove = (ev: MouseEvent) => {
-    if (this.mouseDown) {
-      const [mouseX, mouseY] = getMousePos(this.canvas, ev);
-
-      this.drawLineTo(mouseX, mouseY);
-      this.dragPath.push([mouseX, mouseY]);
-
-      if (this.dragPath.length >= this.dragChunkSize) {
-        this.socketClient.emit(SocketEvent.drawPath, this.dragPath);
-        this.dragPath = [];
-      }
-    }
-  };
-
   private handleMouseUp = (ev: MouseEvent) => {
     this.mouseDown = false;
+    this.socketClient.emit(SocketEvent.endPath);
+    this.dragPath = [];
+  };
 
-    if (this.dragPath.length > 0) {
+  private handleBodyMouseMove = (ev: MouseEvent) => {
+    if (!this.mouseDown) {
+      return;
+    }
+
+    const [mouseX, mouseY] = getMousePos(this.canvas, ev);
+    this.prevMousePos = [mouseX, mouseY];
+  };
+
+  private handleCanvasMouseMove = (ev: MouseEvent) => {
+    if (!this.mouseDown) {
+      return;
+    }
+
+    if (ev.which !== 1) {
+      return this.handleMouseUp(ev);
+    }
+
+    const [mouseX, mouseY] = getMousePos(this.canvas, ev);
+
+    this.drawLineTo(mouseX, mouseY);
+    this.dragPath.push([mouseX, mouseY]);
+
+    if (this.dragPath.length >= this.dragChunkSize) {
       this.socketClient.emit(SocketEvent.drawPath, this.dragPath);
       this.dragPath = [];
     }
-
-    this.socketClient.emit(SocketEvent.endPath);
   };
 
   private handleMouseLeave = (ev: MouseEvent) => {
-    if (this.mouseDown) {
-      const [mouseX, mouseY] = getMousePos(this.canvas, ev);
-      this.mouseDown = false;
-      this.drawLineTo(mouseX, mouseY);
-
-      this.dragPath.push([mouseX, mouseY]);
-      this.socketClient.emit(SocketEvent.drawPath, this.dragPath);
-      this.socketClient.emit(SocketEvent.endPath);
-      this.dragPath = [];
+    if (!this.mouseDown) {
+      return;
     }
+
+    const [mouseX, mouseY] = getMousePos(this.canvas, ev);
+
+    document.body.addEventListener('mousemove', this.handleBodyMouseMove);
+    this.drawLineTo(mouseX, mouseY);
+    this.dragPath.push([mouseX, mouseY]);
+    this.socketClient.emit(SocketEvent.drawPath, this.dragPath);
+    this.socketClient.emit(SocketEvent.endPath);
+    this.dragPath = [];
+  };
+
+  private handleMouseEnter = (ev: MouseEvent) => {
+    if (!this.mouseDown) {
+      return;
+    }
+
+    const [mouseX, mouseY] = this.prevMousePos;
+    const { strokeWidth, strokeColor } = this.brush;
+
+    document.body.removeEventListener('mousemove', this.handleBodyMouseMove);
+    this.socketClient.emit(SocketEvent.beginPath, [
+      mouseX,
+      mouseY,
+      strokeWidth,
+      strokeColor,
+    ]);
+    this.beginPath(mouseX, mouseY, strokeWidth, strokeColor);
   };
 }
 

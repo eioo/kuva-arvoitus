@@ -2,6 +2,15 @@ export function getMousePos(canvas: HTMLCanvasElement, ev: MouseEvent) {
   return [ev.pageX - canvas.offsetLeft, ev.pageY - canvas.offsetTop];
 }
 
+export function clickedInside(canvas: HTMLCanvasElement, ev: MouseEvent) {
+  return (
+    ev.pageX > canvas.offsetLeft &&
+    ev.pageX < canvas.offsetLeft + canvas.width &&
+    ev.pageY > canvas.offsetTop &&
+    ev.pageY < canvas.offsetTop + canvas.height
+  );
+}
+
 export function getRoomNameFromUrl() {
   const { pathname } = window.location;
 
@@ -10,4 +19,8 @@ export function getRoomNameFromUrl() {
   }
 
   return;
+}
+
+export function capitalize(str: string) {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }

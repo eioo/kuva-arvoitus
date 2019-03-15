@@ -5,15 +5,17 @@ html(lang="en")
     meta(name="viewport", content="width=device-width, initial-scale=1.0")
     meta(http-equiv="X-UA-Compatible", content="ie=edge")
     title Kuva-arvoitus
-    link(rel="stylesheet", href="style.css")
+    link(rel="stylesheet", href="scss/style.scss")
   body
     .join-container
-      | Room name: 
-      input#join-room-name(type="text")
-      button#join-room Join
+      div Join room
+      div
+        input#join-room-name(type="text", placeholder="Room name...")
+      div
+        button#join-room Join
 
     .game-container
-      div
+      .left
         .current-color(data-color="black", style="background: black")
         .palette
           - const colors = [
@@ -34,11 +36,16 @@ html(lang="en")
         p
           button#clear-canvas Clear
 
-      canvas#game
-      div
-        p
-          | People in room:&nbsp;
-          span#room-user-count 0
+      .middle
+        canvas#game
+        
+      .right
+        div
+          img.icon(src="assets/gamepad.svg")
+          span#room-name
+        div
+          img.icon(src="assets/users.svg")
+          span#room-user-count
 
 
 
