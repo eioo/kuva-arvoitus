@@ -10,6 +10,10 @@ class SocketClient {
     this.create();
   }
 
+  public isConnected() {
+    return this.ws.readyState === this.ws.OPEN;
+  }
+
   public emit(event: SocketEvent, data?: any) {
     data = data ? data : [];
     const json = JSON.stringify([event, ...data]);
@@ -28,7 +32,7 @@ class SocketClient {
 
   private onMessage = (ev: MessageEvent) => {
     const { data } = ev;
-    const [event, ...values] = JSON.parse(data);
+    const [event, values] = JSON.parse(data);
 
     if (event === SocketEvent.beginPath) {
       const [x, y, strokeWidth, strokeColor] = values;
@@ -49,7 +53,7 @@ class SocketClient {
     }
 
     if (event === SocketEvent.roomUserCount) {
-      const [count] = values;
+      const count = values;
       this.game.setRoomUserCount(count);
     }
   };

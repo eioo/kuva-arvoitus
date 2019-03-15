@@ -2,7 +2,7 @@ import * as ws from 'ws';
 
 export interface IWebSocketExtended extends ws {
   id: string;
-  room: string;
+  roomName: string;
   drawPath: IDrawPath;
 }
 

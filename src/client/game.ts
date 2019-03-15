@@ -131,10 +131,19 @@ class Game {
   };
 
   private joinRoom(roomName: string) {
+    if (roomName === '') {
+      return alert('Type room name');
+    }
+
     if (!/^[A-Za-z0-9]+$/.test(roomName)) {
       return alert('Can only contain A-Za-z0-9 and no spaces.');
     }
 
+    if (!this.socketClient.isConnected()) {
+      return alert('Not connected to server');
+    }
+
+    this.socketClient.emit(SocketEvent.joinRoom, roomName);
     window.location.href = `/room/${roomName}`;
   }
 
