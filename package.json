@@ -5,13 +5,14 @@
   "license": "MIT",
   "scripts": {
     "build:client": "parcel build src/client/index.pug",
-    "dev:client": "parcel src/client/index.pug",
+    "dev:client": "ts-node-dev --transpileOnly src/clientBundler.ts",
     "dev:server": "ts-node-dev --transpileOnly --respawn src/server/index.ts",
     "dev": "npm-run-all -p dev:*",
     "start": "npm run dev"
   },
   "dependencies": {
     "@types/dotenv": "^6.1.0",
+    "@types/parcel-bundler": "^1.10.2",
     "@types/uuid": "^3.4.4",
     "@types/ws": "^6.0.1",
     "dayjs": "^1.8.10",
