@@ -1,7 +1,7 @@
 import { config } from '../env';
 import { SocketEvent } from '../socketEvents';
 import Game from './game';
-import { getRoomNameFromUrl } from './utils';
+import { getRoomNameFromUrl, sleep } from './utils';
 
 class SocketClient {
   private ws: WebSocket;
@@ -30,26 +30,53 @@ class SocketClient {
     this.ws.onmessage = this.onMessage;
   }
 
-  private onMessage = (ev: MessageEvent) => {
+  private onMessage = async (ev: MessageEvent) => {
     const { data } = ev;
     const [event, values] = JSON.parse(data);
 
     if (event === SocketEvent.beginPath) {
       const [x, y, strokeWidth, strokeColor] = values;
+      console.log('bat pegin :D');
       return this.game.beginPath(x, y, strokeWidth, strokeColor);
     }
 
     if (event === SocketEvent.drawPath) {
-      for (const point of values) {
-        const [x, y] = point;
-        this.game.drawLineTo(x, y);
+      if (!values[0] || !values[0].points) {
+        const [x, y] = values;
+        return this.game.drawLineTo(x, y);
       }
 
+      for (const drawPath of values) {
+        const [startX, startY] = drawPath.points[0];
+        this.game.beginPath(
+          startX,
+          startY,
+          drawPath.strokeWidth,
+          drawPath.strokeColor
+        );
+
+        let counter = 0;
+
+        while (drawPath.points.length) {
+          const [x, y] = drawPath.points.shift();
+          this.game.ctx.lineTo(x, y);
+
+          counter++;
+
+          if (counter % 20 === 0) {
+            this.game.ctx.stroke();
+            await sleep(10);
+          }
+        }
+
+        this.game.ctx.stroke();
+      }
       return;
     }
 
     if (event === SocketEvent.clearCanvas) {
-      return this.game.clearCanvas();
+      this.game.clearCanvas();
+      return;
     }
 
     if (event === SocketEvent.roomUserCount) {

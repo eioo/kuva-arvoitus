@@ -12,9 +12,9 @@ const $all = (selector: string) =>
   Array.from(document.querySelectorAll(selector));
 
 class Game {
+  public ctx: CanvasRenderingContext2D;
   private socketClient: SocketClient;
   private canvas: HTMLCanvasElement;
-  private ctx: CanvasRenderingContext2D;
 
   private mouseDown = false;
   private prevMousePos: number[] = [];
@@ -192,7 +192,8 @@ class Game {
 
     const [mouseX, mouseY] = getMousePos(this.canvas, ev);
 
-    this.drawLineTo(mouseX, mouseY);
+    this.ctx.lineTo(mouseX, mouseY);
+    this.ctx.stroke();
     this.dragPath.push([mouseX, mouseY]);
 
     if (this.dragPath.length >= this.dragChunkSize) {
@@ -209,7 +210,10 @@ class Game {
     const [mouseX, mouseY] = getMousePos(this.canvas, ev);
 
     document.body.addEventListener('mousemove', this.handleBodyMouseMove);
-    this.drawLineTo(mouseX, mouseY);
+
+    this.ctx.lineTo(mouseX, mouseY);
+    this.ctx.stroke();
+
     this.dragPath.push([mouseX, mouseY]);
     this.socketClient.emit(SocketEvent.drawPath, this.dragPath);
     this.socketClient.emit(SocketEvent.endPath);

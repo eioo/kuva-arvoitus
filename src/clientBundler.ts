@@ -27,10 +27,10 @@ bundler.on('buildEnd', () => {
   readline.cursorTo(process.stdout, 0);
   process.stdout.write(
     `${dayjs().format(timestamp)}\t${Green}Done. Took ${+new Date() -
-      +startDate}ms\n`
+      +startDate}ms${Reset}\n`
   );
 });
 
 (async () => {
-  await bundler.bundle();
+  await bundler.serve();
 })();

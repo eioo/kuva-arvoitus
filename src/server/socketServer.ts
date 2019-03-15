@@ -3,7 +3,7 @@ import * as WebSocket from 'ws';
 import { config } from '../env';
 import { SocketEvent } from '../socketEvents';
 import { IGameRooms, IWebSocketExtended } from '../types';
-import { logger } from './logger';
+import { logger } from './utils/logger';
 
 class SocketServer {
   public wss: WebSocket.Server;
@@ -40,23 +40,7 @@ class SocketServer {
             };
           }
 
-          for (const drawPath of this.rooms[roomName].drawPaths) {
-            if (!drawPath.points.length) {
-              return;
-            }
-
-            const [firstX, firstY] = drawPath.points[0];
-
-            this.send(ws, SocketEvent.beginPath, [
-              firstX,
-              firstY,
-              drawPath.strokeWidth,
-              drawPath.strokeColor,
-            ]);
-
-            this.send(ws, SocketEvent.drawPath, drawPath.points);
-          }
-
+          this.send(ws, SocketEvent.drawPath, this.rooms[roomName].drawPaths);
           ws.roomName = roomName;
           this.rooms[roomName].clients.push(ws);
 
@@ -100,8 +84,10 @@ class SocketServer {
             return;
           }
 
-          ws.drawPath.points.push(values[0]);
-          return this.broadcastToRoom(ws, SocketEvent.drawPath, values);
+          const [drawPath] = values;
+
+          ws.drawPath.points.push(drawPath);
+          return this.broadcastToRoom(ws, SocketEvent.drawPath, drawPath);
         }
 
         if (event === SocketEvent.clearCanvas) {
