@@ -36,7 +36,6 @@ class SocketClient {
 
     if (event === SocketEvent.beginPath) {
       const [x, y, strokeWidth, strokeColor] = values;
-      console.log('bat pegin :D');
       return this.game.beginPath(x, y, strokeWidth, strokeColor);
     }
 

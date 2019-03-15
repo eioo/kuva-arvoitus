@@ -7,4 +7,7 @@ export const config = {
     host: process.env.WEBSOCKET_HOST || '127.0.0.1',
     port: Number(process.env.WEBSOCKET_PORT) || 8080,
   },
+  app: {
+    port: process.env.APP_PORT || 8081,
+  },
 };

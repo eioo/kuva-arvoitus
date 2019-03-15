@@ -1,6 +1,7 @@
 // tslint:disable: no-var-requires
 import dayjs = require('dayjs');
 import * as readline from 'readline';
+import { config } from './env';
 const Bundler = require('parcel-bundler');
 
 const Reset = '\x1b[0m';
@@ -8,7 +9,7 @@ const Cyan = '\x1b[36m';
 const Green = '\x1b[32m';
 
 const bundler = new Bundler('src/client/index.pug', {
-  logLevel: 0,
+  logLevel: 3,
 });
 
 let startDate: Date;
@@ -32,5 +33,5 @@ bundler.on('buildEnd', () => {
 });
 
 (async () => {
-  await bundler.serve();
+  await bundler.serve(config.app.port);
 })();
