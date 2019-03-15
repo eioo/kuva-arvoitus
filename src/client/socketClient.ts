@@ -1,6 +1,7 @@
 import { config } from '../env';
 import { SocketEvent } from '../socketEvents';
 import Game from './game';
+import { getRoomNameFromUrl } from './utils';
 
 class SocketClient {
   private ws: WebSocket;
@@ -9,7 +10,7 @@ class SocketClient {
     this.create();
   }
 
-  public emit(event: SocketEvent, data?: any[]) {
+  public emit(event: SocketEvent, data?: any) {
     data = data ? data : [];
     const json = JSON.stringify([event, ...data]);
     this.ws.send(json);
@@ -39,6 +40,7 @@ class SocketClient {
         const [x, y] = point;
         this.game.drawLineTo(x, y);
       }
+
       return;
     }
 
@@ -48,14 +50,18 @@ class SocketClient {
 
     if (event === SocketEvent.roomUserCount) {
       const [count] = values;
-      console.log(values, count);
       this.game.setRoomUserCount(count);
     }
   };
 
-  private onOpen() {
+  private onOpen = () => {
     console.log('Socket connected');
-  }
+    const roomName = getRoomNameFromUrl();
+
+    if (roomName) {
+      this.emit(SocketEvent.joinRoom, roomName);
+    }
+  };
 
   private onClose = () => {
     console.log('Socket disconnected');

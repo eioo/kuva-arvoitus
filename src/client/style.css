@@ -1,3 +1,38 @@
 canvas#game {
   border: 1px solid gray;
+  width: 800px;
+  height: 600px;
+}
+
+.join-container,
+.game-container {
+  display: none;
+}
+
+.game-container {
+  grid-template-columns: 60px 810px 200px;
+}
+
+/* Left side */
+.current-color {
+  width: 50px;
+  height: 50px;
+  margin-bottom: 5px;
+}
+
+.palette {
+  display: grid;
+  grid-template-columns: repeat(2, 25px);
+  grid-auto-rows: 25px;
+}
+
+.palette .color:hover {
+  border: 3px solid black;
+}
+
+#stroke-width {
+  transform: rotate(270deg);
+  margin-top: 50px;
+  margin-bottom: 50px;
+  margin-left: -40px;
 }

@@ -1,5 +1,6 @@
 import { SocketEvent } from '../socketEvents';
 import SocketClient from './socketClient';
+import { getMousePos, getRoomNameFromUrl } from './utils';
 
 const $ = (selector: string) => document.querySelector(selector);
 const $all = (selector: string) =>
@@ -64,21 +65,42 @@ class Game {
     this.canvas.addEventListener('mouseup', this.handleMouseUp);
     this.canvas.addEventListener('mouseleave', this.handleMouseLeave);
 
+    const roomName = getRoomNameFromUrl();
+
+    if (roomName) {
+      const gameContainerEl = $('.game-container') as HTMLDivElement;
+      gameContainerEl.style.display = 'grid';
+    } else {
+      const joinContainerEl = $('.join-container') as HTMLDivElement;
+      joinContainerEl.style.display = 'block';
+    }
+
     this.buttonEventListeners();
   }
 
   private buttonEventListeners = () => {
-    const strokeWidthRange = $('input#stroke-width') as HTMLButtonElement;
-    const strokeColorBtns = $all('button.stroke-color') as HTMLButtonElement[];
+    // Join room
+    const joinRoomInput = $('input#join-room-name') as HTMLInputElement;
+    const joinRoomButton = $('button#join-room') as HTMLButtonElement;
+
+    // Game
+    const strokeWidthRange = $('input#stroke-width') as HTMLInputElement;
+    const currentColorEl = $('.current-color') as HTMLDivElement;
+    const strokeColorElAll = $all('.palette .color') as HTMLDivElement[];
     const clearButton = $('button#clear-canvas') as HTMLButtonElement;
+
+    joinRoomButton.addEventListener('click', () => {
+      this.joinRoom(joinRoomInput.value);
+    });
 
     strokeWidthRange.addEventListener('change', () => {
       this.brush.strokeWidth = Number(strokeWidthRange.value) || 3;
     });
 
-    strokeColorBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        this.brush.strokeColor = btn.dataset.color || 'black';
+    strokeColorElAll.forEach(div => {
+      div.addEventListener('click', () => {
+        this.brush.strokeColor = div.dataset.color || 'black';
+        currentColorEl.style.background = this.brush.strokeColor;
       });
     });
 
@@ -88,15 +110,16 @@ class Game {
     });
   };
 
-  private getMousePosition(ev: MouseEvent) {
-    return [
-      ev.pageX - this.canvas.offsetLeft,
-      ev.pageY - this.canvas.offsetTop,
-    ];
+  private joinRoom(roomName: string) {
+    if (!/^[A-Za-z0-9]+$/.test(roomName)) {
+      return alert('Can only contain A-Za-z0-9 and no spaces.');
+    }
+
+    window.location.href = `/room/${roomName}`;
   }
 
   private handleMouseDown = (ev: MouseEvent) => {
-    const [mouseX, mouseY] = this.getMousePosition(ev);
+    const [mouseX, mouseY] = getMousePos(this.canvas, ev);
     const { strokeWidth, strokeColor } = this.brush;
     this.mouseDown = true;
 
@@ -112,7 +135,7 @@ class Game {
 
   private handleMouseMove = (ev: MouseEvent) => {
     if (this.mouseDown) {
-      const [mouseX, mouseY] = this.getMousePosition(ev);
+      const [mouseX, mouseY] = getMousePos(this.canvas, ev);
 
       this.drawLineTo(mouseX, mouseY);
       this.dragPath.push([mouseX, mouseY]);
@@ -131,16 +154,19 @@ class Game {
       this.socketClient.emit(SocketEvent.drawPath, this.dragPath);
       this.dragPath = [];
     }
+
+    this.socketClient.emit(SocketEvent.endPath);
   };
 
   private handleMouseLeave = (ev: MouseEvent) => {
     if (this.mouseDown) {
-      const [mouseX, mouseY] = this.getMousePosition(ev);
+      const [mouseX, mouseY] = getMousePos(this.canvas, ev);
       this.mouseDown = false;
       this.drawLineTo(mouseX, mouseY);
 
       this.dragPath.push([mouseX, mouseY]);
       this.socketClient.emit(SocketEvent.drawPath, this.dragPath);
+      this.socketClient.emit(SocketEvent.endPath);
       this.dragPath = [];
     }
   };

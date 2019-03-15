@@ -7,24 +7,39 @@ html(lang="en")
     title Kuva-arvoitus
     link(rel="stylesheet", href="style.css")
   body
-    canvas#game
-    p
-      | People in room:&nbsp;
-      span#room-user-count 0
-    p
-      | Brush width: 
-      input(type="range", id="stroke-width", min=1, max=30, value=3, step=1)
+    .join-container
+      | Room name: 
+      input#join-room-name(type="text")
+      button#join-room Join
 
-    p
-      | Brush color:
-      button.stroke-color(data-color="white") ereisör
-      button.stroke-color(data-color="black") bläk
-      button.stroke-color(data-color="red") red
-      button.stroke-color(data-color="green") gren
-      button.stroke-color(data-color="blue") blue
-      button.stroke-color(data-color="yellow") yelou
+    .game-container
+      div
+        .current-color(data-color="black", style="background: black")
+        .palette
+          - const colors = [
+          - '#FFFFFF', '#C1C1C1', '#EF130B', '#FF7100',
+          - '#FFE400', '#00CC00', '#00B2FF', '#231FD3',
+          - '#A300BA', '#D37CAA', '#A0522D', '#000000',
+          - '#4C4C4C', '#740B07', '#C23800', '#E8A200',
+          - '#005510', '#00569E', '#0E0865', '#550069',
+          - '#A75574', '#63300D', ];
+          
+          - for (const color of colors) {
+            .color(data-color=color, style="background:" + color)
+          - }
 
-    p
-      button#clear-canvas Clear canvas
+        p
+          input#stroke-width(type="range", min=1, max=30, value=3, step=1)
+
+        p
+          button#clear-canvas Clear
+
+      canvas#game
+      div
+        p
+          | People in room:&nbsp;
+          span#room-user-count 0
+
+
 
   script(src='index.ts')
