@@ -1,5 +1,5 @@
 // tslint:disable: no-var-requires
-import dayjs = require('dayjs');
+import * as dayjs from 'dayjs';
 import * as readline from 'readline';
 import { config } from './env';
 const Bundler = require('parcel-bundler');
@@ -23,12 +23,12 @@ bundler.on('buildStart', () => {
 
 bundler.on('buildEnd', () => {
   const timestamp = dayjs().format('HH:mm:ss');
+  const deltaTime = +new Date() - +startDate;
 
   readline.clearLine(process.stdout, 0);
   readline.cursorTo(process.stdout, 0);
   process.stdout.write(
-    `${dayjs().format(timestamp)}\t${Green}Done. Took ${+new Date() -
-      +startDate}ms${Reset}\n`
+    `${dayjs().format(timestamp)}\t${Green}Done. Took ${deltaTime}ms${Reset}\n`
   );
 });
 
