@@ -13,7 +13,7 @@ class SocketServer {
     this.create();
   }
 
-  public create() {
+  private create() {
     this.wss = new WebSocket.Server({
       port: config.webSocket.port,
     });
@@ -34,13 +34,13 @@ class SocketServer {
           }
 
           if (!this.rooms[roomName]) {
-            this.rooms[roomName] = {
-              clients: [],
-              drawPaths: [],
-            };
+            this.createRoom(roomName);
           }
 
-          this.send(ws, SocketEvent.drawPath, this.rooms[roomName].drawPaths);
+          if (this.rooms[roomName].drawPaths.length) {
+            this.send(ws, SocketEvent.drawPath, this.rooms[roomName].drawPaths);
+          }
+
           ws.roomName = roomName;
           this.rooms[roomName].clients.push(ws);
 
@@ -113,7 +113,7 @@ class SocketServer {
           );
 
           if (!this.rooms[ws.roomName].clients.length) {
-            delete this.rooms[ws.roomName];
+            this.deleteRoom(ws.roomName);
           }
         }
 
@@ -124,7 +124,20 @@ class SocketServer {
     logger.log('WebSocket server running on port ' + config.webSocket.port);
   }
 
-  public send(ws: IWebSocketExtended, event: SocketEvent, ...data: any) {
+  private createRoom(roomName: string) {
+    this.rooms[roomName] = {
+      clients: [],
+      drawPaths: [],
+    };
+    logger.log(`Room created\t\t"${roomName}"`);
+  }
+
+  private deleteRoom(roomName: string) {
+    delete this.rooms[roomName];
+    logger.log(`Room deleted\t\t"${roomName}"`);
+  }
+
+  private send(ws: IWebSocketExtended, event: SocketEvent, ...data: any) {
     data = Array.isArray(data) ? data : [data];
     const json = JSON.stringify([event, ...data]);
 
@@ -133,7 +146,7 @@ class SocketServer {
     }
   }
 
-  public sendToAllInRoom(
+  private sendToAllInRoom(
     ws: IWebSocketExtended,
     event: SocketEvent,
     ...data: any

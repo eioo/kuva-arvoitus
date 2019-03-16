@@ -1,12 +1,13 @@
 import { config } from '../env';
 import { SocketEvent } from '../socketEvents';
-import Game from './game';
+import App from './app';
 import { getRoomNameFromUrl, sleep } from './utils';
 
 class SocketClient {
   private ws: WebSocket;
+  private redrawSpeed = 10; // Speed of "redraw" when joining a room, higher = faster
 
-  constructor(private game: Game) {
+  constructor(private app: App) {
     this.create();
   }
 
@@ -36,18 +37,20 @@ class SocketClient {
 
     if (event === SocketEvent.beginPath) {
       const [x, y, strokeWidth, strokeColor] = values;
-      return this.game.beginPath(x, y, strokeWidth, strokeColor);
+      return this.app.game.beginPath(x, y, strokeWidth, strokeColor);
     }
 
     if (event === SocketEvent.drawPath) {
+      // Draw singular point
       if (!values[0] || !values[0].points) {
         const [x, y] = values;
-        return this.game.drawLineTo(x, y);
+        return x && y && this.app.game.drawLineTo(x, y);
       }
 
+      // Draw array of points
       for (const drawPath of values) {
         const [startX, startY] = drawPath.points[0];
-        this.game.beginPath(
+        this.app.game.beginPath(
           startX,
           startY,
           drawPath.strokeWidth,
@@ -58,29 +61,29 @@ class SocketClient {
 
         while (drawPath.points.length) {
           const [x, y] = drawPath.points.shift();
-          this.game.ctx.lineTo(x, y);
+          this.app.game.ctx.lineTo(x, y);
 
           counter++;
 
-          if (counter % 20 === 0) {
-            this.game.ctx.stroke();
+          if (counter % this.redrawSpeed === 0) {
+            this.app.game.ctx.stroke();
             await sleep(10);
           }
         }
 
-        this.game.ctx.stroke();
+        this.app.game.ctx.stroke();
       }
       return;
     }
 
     if (event === SocketEvent.clearCanvas) {
-      this.game.clearCanvas();
+      this.app.game.clearCanvas();
       return;
     }
 
     if (event === SocketEvent.roomUserCount) {
       const count = values;
-      this.game.setRoomUserCount(count);
+      this.app.game.setRoomUserCount(count);
     }
   };
 

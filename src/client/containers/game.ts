@@ -1,19 +1,17 @@
-import { SocketEvent } from '../socketEvents';
-import SocketClient from './socketClient';
+import { SocketEvent } from '../../socketEvents';
+import App from '../app';
+import SocketClient from '../socketClient';
 import {
+  $,
+  $all,
   capitalize,
   clickedInside,
   getMousePos,
   getRoomNameFromUrl,
-} from './utils';
+} from '../utils';
 
-const $ = (selector: string) => document.querySelector(selector);
-const $all = (selector: string) =>
-  Array.from(document.querySelectorAll(selector));
-
-class Game {
+class GameContainer {
   public ctx: CanvasRenderingContext2D;
-  private socketClient: SocketClient;
   private canvas: HTMLCanvasElement;
 
   private mouseDown = false;
@@ -25,8 +23,18 @@ class Game {
     strokeColor: 'black',
   };
 
-  constructor() {
-    this.init();
+  constructor(private app: App) {}
+
+  public show() {
+    const roomNameEl = $('#room-name') as HTMLSpanElement;
+    const gameContainerEl = $('.game-container') as HTMLDivElement;
+    const roomName = getRoomNameFromUrl();
+
+    if (roomName) {
+      gameContainerEl.style.display = 'grid';
+      roomNameEl.textContent = capitalize(roomName);
+      this.init();
+    }
   }
 
   public beginPath(
@@ -60,7 +68,6 @@ class Game {
   }
 
   private init() {
-    this.socketClient = new SocketClient(this);
     this.canvas = document.querySelector('canvas#game') as HTMLCanvasElement;
     this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
 
@@ -72,46 +79,14 @@ class Game {
     this.canvas.addEventListener('mouseleave', this.handleMouseLeave);
     this.canvas.addEventListener('mouseenter', this.handleMouseEnter);
 
-    const roomName = getRoomNameFromUrl();
-
-    if (roomName) {
-      const roomNameEl = $('#room-name') as HTMLSpanElement;
-      const gameContainerEl = $('.game-container') as HTMLDivElement;
-      gameContainerEl.style.display = 'grid';
-      roomNameEl.textContent = capitalize(roomName);
-    } else {
-      if (window.location.pathname !== '/') {
-        window.location.href = '/';
-        return;
-      }
-
-      const joinContainerEl = $('.join-container') as HTMLDivElement;
-      joinContainerEl.style.display = 'grid';
-    }
-
     this.prepareElements();
   }
 
   private prepareElements = () => {
-    // Join room
-    const joinRoomInput = $('input#join-room-name') as HTMLInputElement;
-    const joinRoomButton = $('button#join-room') as HTMLButtonElement;
-
-    // Game
     const strokeWidthRange = $('input#stroke-width') as HTMLInputElement;
     const currentColorEl = $('.current-color') as HTMLDivElement;
     const strokeColorElAll = $all('.palette .color') as HTMLDivElement[];
     const clearButton = $('button#clear-canvas') as HTMLButtonElement;
-
-    joinRoomInput.addEventListener('keydown', ev => {
-      if (ev.key === 'Enter') {
-        this.joinRoom(joinRoomInput.value);
-      }
-    });
-
-    joinRoomButton.addEventListener('click', () => {
-      this.joinRoom(joinRoomInput.value);
-    });
 
     strokeWidthRange.addEventListener('change', () => {
       this.brush.strokeWidth = Number(strokeWidthRange.value) || 3;
@@ -126,26 +101,9 @@ class Game {
 
     clearButton.addEventListener('click', () => {
       this.clearCanvas();
-      this.socketClient.emit(SocketEvent.clearCanvas);
+      this.app.socket.emit(SocketEvent.clearCanvas);
     });
   };
-
-  private joinRoom(roomName: string) {
-    if (roomName === '') {
-      return alert('Type room name');
-    }
-
-    if (!/^[A-Za-z0-9]+$/.test(roomName)) {
-      return alert('Can only contain A-Za-z0-9 and no spaces.');
-    }
-
-    if (!this.socketClient.isConnected()) {
-      return alert('Not connected to server');
-    }
-
-    this.socketClient.emit(SocketEvent.joinRoom, roomName);
-    window.location.href = `/room/${roomName}`;
-  }
 
   private handleMouseDown = (ev: MouseEvent) => {
     if (!clickedInside(this.canvas, ev)) {
@@ -156,7 +114,7 @@ class Game {
     const { strokeWidth, strokeColor } = this.brush;
     this.mouseDown = true;
 
-    this.socketClient.emit(SocketEvent.beginPath, [
+    this.app.socket.emit(SocketEvent.beginPath, [
       mouseX,
       mouseY,
       strokeWidth,
@@ -168,7 +126,7 @@ class Game {
 
   private handleMouseUp = (ev: MouseEvent) => {
     this.mouseDown = false;
-    this.socketClient.emit(SocketEvent.endPath);
+    this.app.socket.emit(SocketEvent.endPath);
     this.dragPath = [];
   };
 
@@ -197,7 +155,7 @@ class Game {
     this.dragPath.push([mouseX, mouseY]);
 
     if (this.dragPath.length >= this.dragChunkSize) {
-      this.socketClient.emit(SocketEvent.drawPath, this.dragPath);
+      this.app.socket.emit(SocketEvent.drawPath, this.dragPath);
       this.dragPath = [];
     }
   };
@@ -215,8 +173,8 @@ class Game {
     this.ctx.stroke();
 
     this.dragPath.push([mouseX, mouseY]);
-    this.socketClient.emit(SocketEvent.drawPath, this.dragPath);
-    this.socketClient.emit(SocketEvent.endPath);
+    this.app.socket.emit(SocketEvent.drawPath, this.dragPath);
+    this.app.socket.emit(SocketEvent.endPath);
     this.dragPath = [];
   };
 
@@ -229,7 +187,7 @@ class Game {
     const { strokeWidth, strokeColor } = this.brush;
 
     document.body.removeEventListener('mousemove', this.handleBodyMouseMove);
-    this.socketClient.emit(SocketEvent.beginPath, [
+    this.app.socket.emit(SocketEvent.beginPath, [
       mouseX,
       mouseY,
       strokeWidth,
@@ -239,4 +197,4 @@ class Game {
   };
 }
 
-export default Game;
+export default GameContainer;

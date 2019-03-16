@@ -19,12 +19,18 @@ html(lang="en")
         .current-color(data-color="black", style="background: black")
         .palette
           - const colors = [
-          - '#FFFFFF', '#C1C1C1', '#EF130B', '#FF7100',
-          - '#FFE400', '#00CC00', '#00B2FF', '#231FD3',
-          - '#A300BA', '#D37CAA', '#A0522D', '#000000',
-          - '#4C4C4C', '#740B07', '#C23800', '#E8A200',
-          - '#005510', '#00569E', '#0E0865', '#550069',
-          - '#A75574', '#63300D', ];
+          -   '#000000', '#FFFFFF',
+          -   '#4C4C4C', '#C1C1C1',
+          -   '#740B07', '#EF130B',
+          -   '#C23800', '#FF7100',
+          -   '#E8A200', '#FFE400',
+          -   '#005510', '#00CC00',
+          -   '#00569E', '#00B2FF',
+          -   '#0E0865', '#231FD3',
+          -   '#550069', '#A300BA',
+          -   '#A75574', '#D37CAA',
+          -   '#63300D', '#A0522D'
+          - ];
           
           - for (const color of colors) {
             .color(data-color=color, style="background:" + color)
@@ -41,12 +47,10 @@ html(lang="en")
         
       .right
         div
-          img.icon(src="assets/gamepad.svg")
+          include pug/icons/gamepad.pug
           span#room-name
         div
-          img.icon(src="assets/users.svg")
+          include pug/icons/users.pug
           span#room-user-count
 
-
-
-  script(src='index.ts')
+  script(src='app.ts')

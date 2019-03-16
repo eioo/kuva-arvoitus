@@ -8,6 +8,6 @@ export const config = {
     port: Number(process.env.WEBSOCKET_PORT) || 8080,
   },
   app: {
-    port: process.env.APP_PORT || 8081,
+    port: Number(process.env.APP_PORT) || 8081,
   },
 };

@@ -1,11 +1,18 @@
 @import url('https://fonts.googleapis.com/css?family=Sniglet');
 
+$fg-base: #f9f9f9;
+$bg-light: #4fb99f;
+$bg-base: #068587;
+$bg-dark: #112f41;
+
 * {
   font-family: 'Sniglet', cursive;
 }
 
 body {
   margin: 0;
+  background: $bg-base;
+  color: $fg-base;
 }
 
 canvas#game {
@@ -13,6 +20,7 @@ canvas#game {
   border-radius: 10px;
   width: 800px;
   height: 600px;
+  background: white;
 }
 
 .join-container,
@@ -39,9 +47,15 @@ canvas#game {
     font-size: 24px;
     border: 0px;
     border-radius: 10px;
-    background: #c3f1ff;
+    background: $bg-light;
+    color: $fg-base;
     user-select: none;
     outline: none;
+
+    &::placeholder {
+      color: $fg-base;
+      opacity: 0.5;
+    }
   }
 
   input {
@@ -90,6 +104,7 @@ canvas#game {
     width: 32px;
     margin-right: 10px;
     vertical-align: middle;
+    fill: $fg-base;
   }
 
   #stroke-width {
