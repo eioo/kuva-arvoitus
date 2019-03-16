@@ -1,6 +1,6 @@
 import { SocketEvent } from '../../socketEvents';
 import App from '../app';
-import { $ } from '../utils';
+import { $, setUrlPath } from '../utils';
 
 class JoinRoomContainer {
   constructor(private app: App) {
@@ -14,36 +14,60 @@ class JoinRoomContainer {
     joinRoomInput.focus();
   }
 
+  public hide() {
+    const joinContainerEl = $('.join-container') as HTMLDivElement;
+    joinContainerEl.style.display = 'none';
+  }
+
   public prepareElements() {
     const joinRoomInput = $('input#join-room-name') as HTMLInputElement;
+    const playerNameInput = $('input#join-player-name') as HTMLInputElement;
     const joinRoomButton = $('button#join-room') as HTMLButtonElement;
 
-    joinRoomInput.addEventListener('keydown', ev => {
+    const joinOnEnterKey = (ev: KeyboardEvent) => {
       if (ev.key === 'Enter') {
-        this.joinRoom(joinRoomInput.value);
+        this.joinRoom(joinRoomInput.value, playerNameInput.value);
       }
-    });
+    };
+
+    joinRoomInput.addEventListener('keydown', joinOnEnterKey);
+    playerNameInput.addEventListener('keydown', joinOnEnterKey);
 
     joinRoomButton.addEventListener('click', () => {
-      this.joinRoom(joinRoomInput.value);
+      this.joinRoom(joinRoomInput.value, playerNameInput.value);
     });
   }
 
-  private joinRoom(roomName: string) {
+  private joinRoom(roomName: string, playerName: string) {
+    roomName = roomName.trim();
+    playerName = playerName.trim();
+
+    if (!this.app.socket.isConnected()) {
+      return alert('Not connected to server');
+    }
+
     if (roomName === '') {
-      return alert('Type room name');
+      return alert('Please enter room name');
     }
 
     if (roomName === undefined) {
       return alert('Can only contain A-Z, a-z, 0-9 and spaces.');
     }
 
-    if (!this.app.socket.isConnected()) {
-      return alert('Not connected to server');
+    if (playerName === '') {
+      return alert('Please enter your name');
+    }
+
+    if (playerName.length > 16) {
+      return alert('Sorry bud, 16 is max length for your name');
     }
 
     this.app.socket.emit(SocketEvent.joinRoom, roomName);
-    window.location.href = `/room/${roomName}`;
+    this.app.game.setPlayerName(playerName);
+
+    setUrlPath(`/room/${roomName}`);
+    this.hide();
+    this.app.game.show();
   }
 }
 

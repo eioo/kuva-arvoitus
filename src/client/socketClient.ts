@@ -1,5 +1,6 @@
 import { config } from '../env';
 import { SocketEvent } from '../socketEvents';
+import { IPlayer } from '../types';
 import App from './app';
 import { getRoomNameFromUrl, sleep } from './utils';
 
@@ -34,6 +35,17 @@ class SocketClient {
   private onMessage = async (ev: MessageEvent) => {
     const { data } = ev;
     const [event, values] = JSON.parse(data);
+
+    if (event === SocketEvent.chatMessage) {
+      const [text, playerName] = values;
+      console.log(values);
+
+      if (!text || !playerName) {
+        return;
+      }
+
+      this.app.game.addChatMessage(text, playerName);
+    }
 
     if (event === SocketEvent.beginPath) {
       const [x, y, strokeWidth, strokeColor] = values;
@@ -81,9 +93,9 @@ class SocketClient {
       return;
     }
 
-    if (event === SocketEvent.roomUserCount) {
-      const count = values;
-      this.app.game.setRoomUserCount(count);
+    if (event === SocketEvent.roomPlayers) {
+      const players: IPlayer[] = values;
+      this.app.game.setRoomPlayers(players);
     }
   };
 

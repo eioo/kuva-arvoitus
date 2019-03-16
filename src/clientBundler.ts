@@ -2,6 +2,7 @@
 import * as dayjs from 'dayjs';
 import * as readline from 'readline';
 import { config } from './env';
+import { logger } from './server/utils/logger';
 const Bundler = require('parcel-bundler');
 
 const Reset = '\x1b[0m';
@@ -9,7 +10,7 @@ const Cyan = '\x1b[36m';
 const Green = '\x1b[32m';
 
 const bundler = new Bundler('src/client/index.pug', {
-  logLevel: 3,
+  logLevel: 0,
 });
 
 let startDate: Date;
@@ -33,5 +34,8 @@ bundler.on('buildEnd', () => {
 });
 
 (async () => {
+  logger.log(
+    `Serving web client on ${Cyan}http://localhost:${config.app.port + Reset}`
+  );
   await bundler.serve(config.app.port);
 })();

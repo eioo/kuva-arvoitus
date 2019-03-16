@@ -2,7 +2,7 @@ import * as uuid from 'uuid';
 import * as WebSocket from 'ws';
 import { config } from '../env';
 import { SocketEvent } from '../socketEvents';
-import { IGameRooms, IWebSocketExtended } from '../types';
+import { IGameRooms, IPlayer, IWebSocketExtended } from '../types';
 import { logger } from './utils/logger';
 
 class SocketServer {
@@ -20,6 +20,7 @@ class SocketServer {
 
     this.wss.on('connection', (ws: IWebSocketExtended) => {
       ws.id = uuid.v4();
+      ws.score = 0;
       logger.log(`Socket connected\t(${this.wss.clients.size})\t${ws.id}`);
 
       ws.on('message', (data: string) => {
@@ -42,12 +43,31 @@ class SocketServer {
           }
 
           ws.roomName = roomName;
-          this.rooms[roomName].clients.push(ws);
+          this.rooms[roomName].clients.push(ws.id);
 
-          this.sendToAllInRoom(
+          const playerList = this.getRoomPlayerList(ws);
+          return this.send(ws, SocketEvent.roomPlayers, playerList);
+        }
+
+        if (event === SocketEvent.setPlayerName) {
+          const [playerName] = values;
+
+          if (!playerName || !ws.roomName || ws.playerName) {
+            return;
+          }
+
+          ws.playerName = playerName;
+          return this.sendPlayerListToRoom(ws);
+        }
+
+        if (event === SocketEvent.chatMessage) {
+          const text = values;
+
+          this.broadcastToRoom(
             ws,
-            SocketEvent.roomUserCount,
-            this.rooms[roomName].clients.length
+            SocketEvent.chatMessage,
+            text,
+            ws.playerName
           );
         }
 
@@ -102,19 +122,7 @@ class SocketServer {
         }
 
         if (this.rooms[ws.roomName]) {
-          this.rooms[ws.roomName].clients = this.rooms[
-            ws.roomName
-          ].clients.filter(client => client.id !== ws.id);
-
-          this.sendToAllInRoom(
-            ws,
-            SocketEvent.roomUserCount,
-            this.rooms[ws.roomName].clients.length
-          );
-
-          if (!this.rooms[ws.roomName].clients.length) {
-            this.deleteRoom(ws.roomName);
-          }
+          this.removeClientFromRoom(ws);
         }
 
         logger.log(`Socket disconnected\t(${this.wss.clients.size})\t${ws.id}`);
@@ -122,6 +130,43 @@ class SocketServer {
     });
 
     logger.log('WebSocket server running on port ' + config.webSocket.port);
+  }
+
+  private getRoomPlayerList(ws: IWebSocketExtended) {
+    const players: IPlayer[] = this.getRoomClients(ws.roomName)
+      .filter(client => client.playerName)
+      .map(client => {
+        return {
+          name: client.playerName,
+          score: client.score,
+        };
+      });
+
+    return players;
+  }
+
+  private sendPlayerListToRoom(ws: IWebSocketExtended) {
+    const players = this.getRoomPlayerList(ws);
+    this.sendToAllInRoom(ws, SocketEvent.roomPlayers, players);
+  }
+
+  private getRoomClients(roomName: string): IWebSocketExtended[] {
+    const allClients = Array.from(this.wss.clients) as IWebSocketExtended[];
+    return allClients.filter(client => client.roomName === roomName);
+  }
+
+  private removeClientFromRoom(ws: IWebSocketExtended) {
+    const filtered = this.rooms[ws.roomName].clients.filter(
+      clientId => clientId !== ws.id
+    );
+
+    this.rooms[ws.roomName].clients = filtered;
+
+    if (!this.rooms[ws.roomName].clients.length) {
+      return this.deleteRoom(ws.roomName);
+    }
+
+    this.sendPlayerListToRoom(ws);
   }
 
   private createRoom(roomName: string) {
@@ -159,7 +204,7 @@ class SocketServer {
       return;
     }
 
-    room.clients.forEach(client => {
+    this.getRoomClients(ws.roomName).forEach(client => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(json);
       }
@@ -180,7 +225,7 @@ class SocketServer {
 
     const json = JSON.stringify([event, ...data]);
 
-    room.clients.forEach(client => {
+    this.getRoomClients(sender.roomName).forEach(client => {
       if (client.id !== sender.id && client.readyState === WebSocket.OPEN) {
         client.send(json);
       }

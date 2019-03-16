@@ -3,7 +3,14 @@ import * as ws from 'ws';
 export interface IWebSocketExtended extends ws {
   id: string;
   roomName: string;
+  playerName: string;
+  score: number;
   drawPath: IDrawPath;
+}
+
+export interface IPlayer {
+  name: string;
+  score: number;
 }
 
 interface IDrawPath {
@@ -14,7 +21,7 @@ interface IDrawPath {
 
 export interface IGameRooms {
   [key: string]: {
-    clients: IWebSocketExtended[];
+    clients: string[];
     drawPaths: IDrawPath[];
   };
 }

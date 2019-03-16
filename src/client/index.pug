@@ -8,9 +8,11 @@ html(lang="en")
     link(rel="stylesheet", href="scss/style.scss")
   body
     .join-container
-      div Join room
+      .header Join room
       div
         input#join-room-name(type="text", placeholder="Room name...")
+        input#join-player-name(type="text", placeholder="Your name...")
+
       div
         button#join-room Join
 
@@ -54,31 +56,13 @@ html(lang="en")
           .header
             include pug/icons/users.pug
             | Players (
-            span#room-user-count
+            span#room-user-count 0
             | )
 
           .players
-            .player - Pekka
-            .player - Erkki
-            .player - Jaakko
-            .player - Pena62
-            .player - Epic-man lol
             
         .messages
-          .message
-            .sender Seppo
-            .body Lorem ipsum lol lol lol
-            
-          .message
-            .sender Seppo
-            .body Lorem ipsum lol lol lol
-          .message
-            .sender Seppo
-            .body Lorem ipsum lol lol lol
-          .message
-            .sender Epic-man lol
-            .body Lorem ipsum lol lol lol
-
-        input#chatbox-text(type="text", placeholder="Your answer...")
+        
+        input#chatbox-text(type="text")
 
   script(src='app.ts')

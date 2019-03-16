@@ -15,6 +15,10 @@ export function clickedInside(canvas: HTMLCanvasElement, ev: MouseEvent) {
   );
 }
 
+export function setUrlPath(path: string) {
+  window.history.pushState({}, '', path);
+}
+
 export function getRoomNameFromUrl() {
   const { pathname } = window.location;
 

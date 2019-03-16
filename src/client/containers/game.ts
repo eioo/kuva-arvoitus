@@ -1,4 +1,5 @@
 import { SocketEvent } from '../../socketEvents';
+import { IPlayer } from '../../types';
 import App from '../app';
 import SocketClient from '../socketClient';
 import {
@@ -14,6 +15,7 @@ class GameContainer {
   public ctx: CanvasRenderingContext2D;
   private canvas: HTMLCanvasElement;
 
+  private playerName: string;
   private mouseDown = false;
   private prevMousePos: number[] = [];
   private dragPath: number[][] = [];
@@ -29,10 +31,14 @@ class GameContainer {
     const roomNameEl = $('#room-name') as HTMLSpanElement;
     const gameContainerEl = $('.game-container') as HTMLDivElement;
     const roomName = getRoomNameFromUrl();
+    const chatInputEl = $('#chatbox-text') as HTMLInputElement;
 
     if (roomName) {
       gameContainerEl.style.display = 'grid';
       roomNameEl.textContent = capitalize(roomName);
+      chatInputEl.placeholder = this.playerName
+        ? 'Your answer...'
+        : 'Enter your name to play';
       this.init();
     }
   }
@@ -62,9 +68,36 @@ class GameContainer {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
-  public setRoomUserCount(count: number) {
+  public setPlayerName(name: string) {
+    this.app.socket.emit(SocketEvent.setPlayerName, name);
+    this.playerName = name;
+  }
+
+  public setRoomPlayers(players: IPlayer[]) {
     const roomUserCountEl = $('#room-user-count') as HTMLSpanElement;
-    roomUserCountEl.textContent = count.toString();
+    const playersEl = $('.players') as HTMLDivElement;
+
+    playersEl.innerHTML = '';
+    for (const player of players) {
+      const el = document.createElement('div');
+      el.classList.add('player');
+      el.textContent = '- ' + player.name;
+
+      playersEl.appendChild(el);
+    }
+
+    roomUserCountEl.textContent = players.length.toString();
+  }
+
+  public addChatMessage(text: string, sender?: string) {
+    const messagesEl = $('.messages') as HTMLDivElement;
+
+    messagesEl.innerHTML += `
+      <div class="message">
+        ${sender ? `<div class="sender">${sender}</div>` : ''}
+        <div class="body">${text}</div>
+      </div>
+    `.trim();
   }
 
   private init() {
@@ -87,6 +120,7 @@ class GameContainer {
     const currentColorEl = $('.current-color') as HTMLDivElement;
     const strokeColorElAll = $all('.palette .color') as HTMLDivElement[];
     const clearButton = $('button#clear-canvas') as HTMLButtonElement;
+    const chatInputEl = $('#chatbox-text') as HTMLInputElement;
 
     strokeWidthRange.addEventListener('change', () => {
       this.brush.strokeWidth = Number(strokeWidthRange.value) || 3;
@@ -102,6 +136,29 @@ class GameContainer {
     clearButton.addEventListener('click', () => {
       this.clearCanvas();
       this.app.socket.emit(SocketEvent.clearCanvas);
+    });
+
+    chatInputEl.addEventListener('keydown', ev => {
+      if (ev.key === 'Enter') {
+        const text = chatInputEl.value.trim();
+
+        if (!text) {
+          return;
+        }
+
+        if (!this.playerName) {
+          this.setPlayerName(text);
+          chatInputEl.placeholder = 'Your answer...';
+        } else {
+          this.addChatMessage(chatInputEl.value, this.playerName);
+          this.app.socket.emit(SocketEvent.chatMessage, [
+            text,
+            this.playerName,
+          ]);
+        }
+
+        chatInputEl.value = '';
+      }
     });
   };
 
