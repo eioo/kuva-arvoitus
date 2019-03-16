@@ -1,0 +1,42 @@
+@import url('https://fonts.googleapis.com/css?family=Sniglet');
+
+* {
+  font-family: 'Sniglet', cursive;
+  color: $neutral-base;
+}
+
+body {
+  margin: 0;
+  background: $primary-base;
+}
+
+canvas#game {
+  border: 1px solid gray;
+  border-radius: 10px;
+  width: 800px;
+  height: 600px;
+  background: white;
+}
+
+button,
+input[type='text'] {
+  border: 0px;
+  border-radius: 10px;
+  background: $primary-light;
+  color: $neutral-base;
+  user-select: none;
+  outline: none;
+  font-size: 16px;
+}
+
+button {
+  padding: 3px 5px;
+  &:hover {
+    background: $primary-lighter;
+  }
+}
+
+input[type='text']::placeholder {
+  color: $neutral-base;
+  opacity: 0.5;
+}

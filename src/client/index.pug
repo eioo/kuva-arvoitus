@@ -49,8 +49,36 @@ html(lang="en")
         div
           include pug/icons/gamepad.pug
           span#room-name
-        div
-          include pug/icons/users.pug
-          span#room-user-count
+
+        .player-list
+          .header
+            include pug/icons/users.pug
+            | Players (
+            span#room-user-count
+            | )
+
+          .players
+            .player - Pekka
+            .player - Erkki
+            .player - Jaakko
+            .player - Pena62
+            .player - Epic-man lol
+            
+        .messages
+          .message
+            .sender Seppo
+            .body Lorem ipsum lol lol lol
+            
+          .message
+            .sender Seppo
+            .body Lorem ipsum lol lol lol
+          .message
+            .sender Seppo
+            .body Lorem ipsum lol lol lol
+          .message
+            .sender Epic-man lol
+            .body Lorem ipsum lol lol lol
+
+        input#chatbox-text(type="text", placeholder="Your answer...")
 
   script(src='app.ts')

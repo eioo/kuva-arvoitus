@@ -1,0 +1,96 @@
+.game-container {
+  display: none;
+  width: 95vw;
+  max-width: 1130px;
+  margin: 0 auto;
+  padding-top: 20px;
+  grid-template-columns: 50px 801px 250px;
+  gap: 10px;
+  user-select: none;
+
+  .current-color {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 5px;
+  }
+
+  .palette {
+    display: grid;
+    grid-template-columns: repeat(2, 25px);
+    grid-auto-rows: 25px;
+  }
+
+  .palette .color:hover {
+    border: 3px solid $neutral-dark;
+  }
+
+  .icon {
+    height: 32px;
+    width: 32px;
+    margin-right: 10px;
+    vertical-align: middle;
+    fill: $neutral-base;
+  }
+
+  #stroke-width {
+    transform: rotate(270deg);
+    margin-top: 50px;
+    margin-bottom: 50px;
+    margin-left: -40px;
+  }
+
+  .right {
+    display: grid;
+    height: 602px;
+    grid-template-rows: auto auto 1fr auto;
+  }
+
+  #room-name {
+    font-size: 20px;
+  }
+
+  .player-list {
+    .header {
+      font-size: 20px;
+    }
+
+    .players {
+      padding: 8px 0px;
+      display: grid;
+      grid-auto-rows: 25px;
+    }
+  }
+
+  .messages,
+  #chatbox-text {
+    background: $primary-light;
+    padding: 5px;
+    border-radius: 10px;
+    font-size: 16px;
+  }
+
+  .messages {
+    width: 250px;
+
+    word-wrap: break-word;
+    .message {
+      .sender {
+        display: inline;
+        color: $neutral-dark;
+
+        &::after {
+          content: ': ';
+        }
+      }
+
+      .body {
+        display: inline;
+      }
+    }
+  }
+
+  #chatbox-text {
+    margin-top: 5px;
+    width: 250px;
+  }
+}
